@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="https://www.svgrepo.com/show/475148/sun.svg">
+<link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/weather.png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="dynamic-bg"></div>
+    <div class="bg-overlay"></div>
+    
+    <div id="loader">
+        <div class="loader-content">
+            <div class="sun-load"><i class="fas fa-sun"></i></div>
+            <div class="prog-w"><div class="prog-f"></div></div>
+        </div>
+    </div>
+
+    <div id="auth-modal" class="modal">
+        <div class="modal-card">
+            <h2 id="auth-title">Реєстрація</h2>
+            <p style="color: #666; margin-bottom: 25px;">Створіть свій акаунт у Weathry</p>
+            <input type="text" placeholder="Ім'я" class="modal-input">
+            <input type="email" placeholder="Email" class="modal-input">
+            <input type="password" placeholder="Пароль" class="modal-input">
+            <button class="btn-p" onclick="closeM('auth-modal')">Продовжити</button>
+            <p onclick="closeM('auth-modal')" style="margin-top: 25px; cursor: pointer; color: #444;">Закрити</p>
+        </div>
+    </div>
+
+    <div id="settings-side">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+            <h3>Налаштування</h3>
+            <i class="fas fa-times" onclick="toggleSettings()" style="cursor: pointer;"></i>
+        </div>
+        <button class="btn-p" onclick="toggleUnits()">Перемкнути на °F / °C</button>
+        <button class="btn-p" style="background: #222; color: #fff; margin-top: 20px;" onclick="alert('Функція вибору фото...')">Змінити Аватар</button>
+    </div>
+
+    <aside>
+        <div class="side-logo" id="side-icon"></div>
+        <div class="nav-link active"><i class="fas fa-house-chimney"></i></div>
+        <div class="nav-link"><i class="fas fa-map-location-dot"></i></div>
+        <div class="nav-link"><i class="fas fa-calendar-alt"></i></div>
+        <div class="nav-bottom">
+            <i class="fas fa-user-circle nav-link" onclick="openM('auth-modal')" style="margin:0"></i>
+            <i class="fas fa-cog nav-link" onclick="toggleSettings()" style="margin:0"></i>
+        </div>
+    </aside>
+
+    <main>
+        <div class="panel left-panel">
+            <div class="search-container">
+                <i class="fas fa-search" style="position:absolute; left:18px; top:18px; color:rgba(255,255,255,0.4);"></i>
+                <input type="text" id="cityInput" placeholder="Оберіть місто..." onfocus="showR()" onblur="setTimeout(hideR, 200)">
+                <div class="search-results" id="searchRecs">
+                    <div class="search-item" onclick="changeCity('Ужгород')">Ужгород, Україна</div>
+                    <div class="search-item" onclick="changeCity('Терново')">Терново, Україна</div>
+                    <div class="search-item" onclick="changeCity('Київ')">Київ, Україна</div>
+                    <div class="search-item" onclick="changeCity('Плзень')">Плзень, Чехія</div>
+                </div>
+            </div>
+            <div class="weather-scroll">
+                <div id="mainView">
+                    <div id="mainIcon" style="width:80px; height:80px; margin-bottom:15px;"></div>
+                    <div class="big-t" id="currTemp"></div>
+                    <h2 id="currCity"></h2>
+                    <p id="currCond" style="color:rgba(255,255,255,0.5); font-weight:500;"></p>
+                </div>
+                <div style="margin-top:40px; border-top:1px solid rgba(255,255,255,0.1); padding-top:25px;">
+                    <h4 style="margin-bottom:20px;">Прогноз на 7 днів</h4>
+                    <div id="f-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="grid-stats">
+                <div class="panel">
+                    <div class="stat-label">Швидкість вітру</div>
+                    <div id="windVal" style="font-size:28px; font-weight:700; text-align: center;"></div>
+                    <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 100 30" width="100%"><path d="M0 20 Q 25 5, 50 20 T 100 20" fill="none" stroke="var(--accent)" stroke-width="3"/></svg>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="stat-label">УФ Індекс</div>
+                    <div class="uv-box">
+                        <svg width="100" height="60" viewBox="0 0 100 60">
+                            <path d="M10 50 A 40 40 0 0 1 90 50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="7"/>
+                            <path id="uvArc" class="uv-fill" d="M10 50 A 40 40 0 0 1 90 50" />
+                        </svg>
+                        <div id="uvVal" class="uv-num"></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="stat-label">Схід та Захід Сонця</div>
+                    <div class="sun-path" id="sunTimeline"></div>
+                    <p id="sunCount" style="margin-top:30px; font-size:11px; color:var(--accent); font-weight:600; text-align: center;"></p>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
